@@ -1,7 +1,7 @@
 # observability/schemas.py
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
@@ -33,7 +33,7 @@ class QueryEvent(BaseModel):
     """Evento principal de query (retrieval + generation)"""
     query_id: str
     session_id: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     # Input del usuario
     input: Dict[str, Any]  # query, using, k, filters, etc.
@@ -47,7 +47,7 @@ class FeedbackEvent(BaseModel):
     """Evento de feedback del usuario"""
     feedback_id: str
     query_id: str  # referencia al query original
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     scope: str  # "overall" | "doc_retrieval" | "doc_translation"
     sentiment: str  # "up" | "down" | "annotation_only"

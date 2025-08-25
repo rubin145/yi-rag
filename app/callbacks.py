@@ -17,12 +17,14 @@ retriever = Retriever(vectors_yaml="config/vectors.yaml")
 
 
 def log_query_observability(event):
-    # phoenix_exporter.log_query_event(event)  # Temporarily disabled
     langfuse_logger.log_query_event(event)
+    # Phoenix disabled to prevent duplicate traces
+    # phoenix_exporter.log_query_event(event)
 
 def log_feedback_observability(event):
     langfuse_logger.log_feedback_event(event)
-    # phoenix_exporter.log_feedback_event(event)  # Temporarily disabled
+    # Phoenix disabled to prevent duplicate traces  
+    # phoenix_exporter.log_feedback_event(event)
 
     
 # ---------------------------

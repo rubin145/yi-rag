@@ -84,7 +84,6 @@ class LangfuseLogger:
 			# Store trace ID for feedback linking - use the trace ID, not span ID
 			actual_trace_id = root_span.trace_id if hasattr(root_span, 'trace_id') else root_span.id
 			self._trace_cache[event.query_id] = actual_trace_id
-			print(f"🔗 Stored trace ID {actual_trace_id} for query {event.query_id}")
 			
 			return event.query_id
 		except Exception as e:  # pragma: no cover
@@ -104,7 +103,6 @@ class LangfuseLogger:
 			
 			# Get trace ID from cache
 			trace_id = self._trace_cache.get(event.query_id)
-			print(f"🔍 Looking for trace ID for query {event.query_id}, found: {trace_id}")
 			
 			# Only create score if we have a numeric value and trace ID
 			if score is not None and trace_id:
@@ -120,9 +118,6 @@ class LangfuseLogger:
 						"target": event.target,
 					}
 				)
-				print(f"✅ Created score {score_name}={score} for trace {trace_id}")
-			else:
-				print(f"⚠️ Skipped score creation: score={score}, trace_id={trace_id}")
 			# For annotation_only, we can skip or just log the annotation
 			# Langfuse doesn't require scores for every piece of feedback
 			return True
