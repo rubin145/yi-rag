@@ -1,6 +1,18 @@
-## yi-rag
+---
+title: Yiddish RAG
+emoji: 📚
+colorFrom: blue
+colorTo: purple
+sdk: gradio
+sdk_version: 5.42.0
+app_file: app/app.py
+pinned: false
+license: mit
+---
 
-RAG para textos en yiddish con pipeline de preprocesado (split + traducción opcional), embeddings multi-provider y indexado en Qdrant con named vectors.
+# Yiddish RAG
+
+A Retrieval-Augmented Generation system for historical Yiddish texts with semantic search capabilities.
 
 ### Componentes
 - `core/preprocess.py`: lee `data/raw/*.txt`, detecta páginas (`--- Page N ---`), extrae título (`Title:`), hace chunking por página/tokens/caracteres y traduce opcionalmente a EN. Guarda `data/processed/chunks.parquet` o partes.
