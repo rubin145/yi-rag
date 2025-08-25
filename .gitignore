@@ -1,6 +1,5 @@
 .*
 *.env
-*.yaml
 *.parquet
 data/raw/*.txt
 *.csv

@@ -109,7 +109,7 @@ with gr.Blocks(css=css, title="Yiddish RAG") as demo:
         include_yi = gr.Checkbox(value=True, label="Show original Yiddish", scale=1)
     with gr.Accordion("Advanced Settings", open=False):
         with gr.Row():
-            using = gr.Dropdown(label="Vector Model", choices=retriever.list_vectors(),
+            using = gr.Dropdown(label="Vector Model", choices=available_vectors,
                                 value=DEFAULT_VECTOR, multiselect=False)
             k = gr.Slider(5, 20, value=10, step=1, label="Results Count (Top-k)")
             score_threshold = gr.Slider(0.1, 1.0, value=0.7, step=0.05, label="Score Threshold")
