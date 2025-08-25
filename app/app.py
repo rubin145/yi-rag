@@ -11,6 +11,7 @@ except Exception:
 
 import gradio as gr
 
+# Add parent directory to path for imports when running from app/ directory
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
@@ -20,9 +21,9 @@ from core.store_qdrant import QdrantStore
 from core.schemas import SearchFilters
 from core.generate import answer, GenerateParams
 from observability import PhoenixExporter, LangfuseLogger, QueryEvent
-from app.helpers import _make_session_id, _render_hits_html, _format_citations, get_random_defaults
-from app.callbacks import on_search, on_generate, on_feedback_overall, on_feedback_overall_annotation, on_doc_feedback, _doc_choices_from_hits
-from app.model_downloader import ensure_sparse_model
+from helpers import _make_session_id, _render_hits_html, _format_citations, get_random_defaults
+from callbacks import on_search, on_generate, on_feedback_overall, on_feedback_overall_annotation, on_doc_feedback, _doc_choices_from_hits
+from model_downloader import ensure_sparse_model
 
 
 
