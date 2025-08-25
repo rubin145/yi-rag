@@ -22,6 +22,7 @@ from core.generate import answer, GenerateParams
 from observability import PhoenixExporter, LangfuseLogger, QueryEvent
 from app.helpers import _make_session_id, _render_hits_html, _format_citations, get_random_defaults
 from app.callbacks import on_search, on_generate, on_feedback_overall, on_feedback_overall_annotation, on_doc_feedback, _doc_choices_from_hits
+from app.model_downloader import ensure_sparse_model
 
 
 
@@ -29,6 +30,9 @@ from app.callbacks import on_search, on_generate, on_feedback_overall, on_feedba
 # Global singletons
 # ---------------------------
 try:
+    # Download sparse model if needed (for HF Spaces deployment)
+    ensure_sparse_model()
+    
     retriever = Retriever(vectors_yaml="config/vectors.yaml")
     try:
         QdrantStore(retriever.collection).ensure_payload_indexes()
