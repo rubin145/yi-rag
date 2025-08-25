@@ -1,0 +1,18 @@
+.*
+*.env
+*.yaml
+*.parquet
+*.txt
+*.csv
+*.lock
+*.toml
+*.ipynb
+
+NOTES.md
+
+# Binary model files (downloaded at runtime)
+data/sparse_model/tfidf_vectorizer.joblib
+
+# Poetry files (use pip for HF Spaces)
+pyproject.toml
+poetry.lock
