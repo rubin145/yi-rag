@@ -1,7 +1,7 @@
 import time
 import uuid
 from typing import List, Dict, Any, Optional, Tuple
-from app.helpers import _make_session_id, _render_hits_html, _format_citations
+from helpers import _make_session_id, _render_hits_html, _format_citations
 import gradio as gr
 from core.retrieve import SearchFilters, Retriever
 from core.generate import GenerateParams, answer
