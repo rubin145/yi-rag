@@ -1,11 +1,10 @@
 .*
 *.env
-*.yaml
+# *.yaml  # Allow config files to be committed
 *.parquet
 data/raw/*.txt
 *.csv
 *.lock
-*.toml
 *.ipynb
 
 NOTES.md
