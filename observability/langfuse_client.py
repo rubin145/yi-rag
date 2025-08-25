@@ -71,8 +71,7 @@ class LangfuseLogger:
 					model=event.generation.model,
 					input={"query": event.input.get("query"), "context_docs": len(event.retrieval.hits) if event.retrieval else 0},
 					output={"answer": event.generation.answer, "citations": event.generation.citations},
-					usage=event.generation.usage,
-					metadata={"timing_ms": event.generation.timing_ms}
+					metadata={"timing_ms": event.generation.timing_ms, "usage": event.generation.usage}
 				)
 				generation_span.end()
 				root_span.update(output={"answer": event.generation.answer})
