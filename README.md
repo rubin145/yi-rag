@@ -3,9 +3,7 @@ title: Yiddish RAG
 emoji: 📚
 colorFrom: blue
 colorTo: purple
-sdk: gradio
-sdk_version: 5.42.0
-app_file: app/app.py
+sdk: docker
 pinned: false
 license: mit
 ---
