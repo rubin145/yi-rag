@@ -13,6 +13,10 @@ class RetrievalSpan(BaseModel):
     vector_name: str
     k: int
     filters: Optional[Dict[str, Any]] = None
+    # Nuevos campos para diagnóstico de configuración de búsqueda
+    search_type: Optional[str] = None  # semantic | lexical | hybrid
+    alpha: Optional[float] = None      # peso dense en híbrido
+    score_threshold: Optional[float] = None  # umbral aplicado sobre score normalizado
 
 
 class GenerationSpan(BaseModel):

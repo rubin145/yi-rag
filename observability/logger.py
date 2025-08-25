@@ -18,11 +18,11 @@ class MultiLogger:
     def __init__(self):
         # Cliente OpenTelemetry único
         self.otel_client = get_otel_client()
-        
+
         # TODO: Añadir clientes específicos para casos no-OTLP
         # self.hf_datasets = HFDatasetsLogger()  # Dataset propio
         # self.qdrant_feedback = QdrantFeedbackLogger()  # Translation feedback
-        
+
         self.enabled = True
     
     def log_query_event(
@@ -53,7 +53,10 @@ class MultiLogger:
                 timing_ms=retrieval_data.get("timing_ms", 0),
                 vector_name=retrieval_data.get("vector_name", ""),
                 k=retrieval_data.get("k", 0),
-                filters=retrieval_data.get("filters")
+                filters=retrieval_data.get("filters"),
+                search_type=retrieval_data.get("search_type") or input_data.get("search_type"),
+                alpha=retrieval_data.get("alpha"),
+                score_threshold=retrieval_data.get("score_threshold") or input_data.get("score_threshold")
             )
             
             generation_span = None
@@ -121,20 +124,85 @@ class MultiLogger:
                 target=target
             )
             
-            if scope == "doc_translation":
-                # Feedback de traducción va solo a Qdrant (específico, no OTLP)
-                # TODO: implementar qdrant feedback
-                # self.qdrant_feedback.update_translation_quality(event)
-                print(f"🔄 Translation feedback {feedback_id} → Qdrant (TODO)")
+            # Siempre enviamos a OpenTelemetry (Langfuse, Phoenix, etc.) para mantener consistencia
+            otel = getattr(self, "otel_client", None)
+
+            # Newer client: has log_feedback_event(event)
+            if hasattr(otel, "log_feedback_event"):
+                otel.log_feedback_event(event)
             else:
-                # Feedback de retrieval va a OpenTelemetry (Langfuse, Phoenix, etc.)
-                self.otel_client.log_feedback_event(event)
-                
-                # TODO: También enviar a dataset propio si está configurado
-                # self.hf_datasets.log_feedback_event(event)
-                
-        except Exception as e:
-            print(f"❌ Error in log_feedback_event: {e}")
+                # Fallback for older clients: emit span parented to the query's root span
+                tracer = getattr(otel, "tracer", None)
+                try:
+                    # --- Build minimal, JSON-safe attributes
+                    attrs = {
+                        "feedback.id": event.feedback_id,
+                        "feedback.query_id": event.query_id,
+                        "feedback.scope": event.scope,
+                        "feedback.sentiment": event.sentiment,
+                        "feedback.annotation": event.annotation or "",
+                    }
+                    if isinstance(event.target, dict):
+                        if "doc_idx" in event.target and event.target["doc_idx"] is not None:
+                            try:
+                                attrs["feedback.target.doc_idx"] = int(event.target["doc_idx"])
+                            except Exception:
+                                attrs["feedback.target.doc_idx"] = str(event.target["doc_idx"])
+                        if "doc_id" in event.target and event.target["doc_id"] is not None:
+                            attrs["feedback.target.doc_id"] = str(event.target["doc_id"])
+
+                    if tracer is None:
+                        print("⚠️ OTEL client has no tracer; feedback span not emitted.")
+                        return
+
+                    # --- Parent to the query’s root span if we have it
+                    parent_ctx = None
+                    try:
+                        mapping_all = getattr(otel, "_query_trace_map", {}) or {}
+                        mapping = mapping_all.get(event.query_id)
+                        if mapping and mapping.get("trace_id") is not None and mapping.get("root_span_id") is not None:
+                            from opentelemetry.trace import SpanContext, TraceFlags, TraceState, NonRecordingSpan, set_span_in_context
+                            sc = SpanContext(
+                                trace_id=mapping["trace_id"],
+                                span_id=mapping["root_span_id"],
+                                is_remote=False,
+                                trace_flags=TraceFlags(TraceFlags.SAMPLED),
+                                trace_state=TraceState(),
+                            )
+                            parent_ctx = set_span_in_context(NonRecordingSpan(sc))
+                    except Exception as _e:
+                        parent_ctx = None
+                        print(f"⚠️ Could not set parent context for feedback: {_e}")
+
+                    from opentelemetry import trace as _trace  # type: ignore
+                    with tracer.start_as_current_span("rag.feedback", context=parent_ctx, kind=_trace.SpanKind.INTERNAL, attributes=attrs):
+                        pass
+
+                    # Optional: update your scorer
+                    if getattr(self, "_scorer", None) and getattr(self._scorer, "enabled", False):
+                        try:
+                            trace_hex = None
+                            if mapping:
+                                trace_id_val = mapping.get("trace_id")
+                                if trace_id_val is not None:
+                                    trace_hex = f"{trace_id_val:032x}"
+                            self._scorer.update_score(
+                                query_id=event.query_id,
+                                trace_hex=trace_hex,
+                                scope=("doc" if event.scope in ("doc_retrieval", "doc_translation") else "overall"),
+                                sentiment=event.sentiment,
+                                annotation=event.annotation,
+                                target={"doc_idx": attrs.get("feedback.target.doc_idx")} if "feedback.target.doc_idx" in attrs else None,
+                            )
+                        except Exception as _e:
+                            print(f"⚠️ Langfuse score update failed (shim): {_e}")
+
+                except Exception as _e:
+                    print(f"⚠️ OTEL fallback failed: {_e}")
+
+        except Exception as _e:
+            print(f"⚠️ OTEL failed somewhere: {_e}")   
+
     
     def flush(self):
         """Fuerza el envío de eventos pendientes en todos los clientes"""

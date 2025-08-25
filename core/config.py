@@ -9,11 +9,11 @@ class Settings(BaseModel):
     # --- Preproceso ---
     # default_index_lang: Literal["en","yi"] = os.getenv("DEFAULT_INDEX_LANG", "yi")
     
-    chunk_strategy: Literal["page","tokens","chars"] = os.getenv("CHUNK_STRATEGY","page")
+    chunk_strategy: Literal["page","tokens","chars"] = os.getenv("CHUNK_STRATEGY","chars")
     chunk_tokens: int = int(os.getenv("CHUNK_TOKENS","450"))
-    chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP","50"))
+    chunk_tokens_overlap: int = int(os.getenv("CHUNK_TOKENS_OVERLAP","50"))
     chunk_chars: int = int(os.getenv("CHUNK_CHARS","2500"))
-    char_overlap: int = int(os.getenv("CHAR_OVERLAP","200"))
+    chunk_chars_overlap: int = int(os.getenv("CHUNK_CHARS_OVERLAP","200"))
 
     # --- Traducción (desacoplada del index) ---
     tr_provider: Literal["openai","cohere","gemini","none"] = os.getenv("TR_PROVIDER","none")
@@ -35,7 +35,7 @@ class Settings(BaseModel):
     qdrant_api_key: Optional[str]  = os.getenv("QDRANT_API_KEY")
     collection_name: str           = os.getenv("QDRANT_COLLECTION", "yi_rag")
 
-    @field_validator("chunk_tokens", "chunk_overlap")
+    @field_validator("chunk_tokens", "chunk_tokens_overlap", "chunk_chars", "chunk_chars_overlap")
     @classmethod
     def _positive(cls, v: int) -> int:
         if v <= 0:

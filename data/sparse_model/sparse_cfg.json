@@ -1,0 +1,15 @@
+{
+  "analyzer": "char_wb",
+  "ngram_range": [
+    3,
+    5
+  ],
+  "min_df": 2,
+  "max_df": 0.9,
+  "max_features": 200000,
+  "sublinear_tf": true,
+  "topk_per_doc": 400,
+  "min_value": 1e-06,
+  "lowercase": false,
+  "dtype": "float32"
+}

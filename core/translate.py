@@ -44,6 +44,9 @@ class Translator:
 
         log.info("Translator init: provider=%s model=%s", self.provider, self.model)
 
+    def get_system_prompt(self) -> str:
+        return SYSTEM_INSTR
+
     def translate_to_en(self, text: str) -> Optional[str]:
         if not text or self.provider == "none":
             return None

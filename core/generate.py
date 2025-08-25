@@ -49,13 +49,13 @@ def _build_context_blocks(
     hits: List[Dict[str, Any]],
     max_chars: int = 12000,
     include_yi: bool = True,
-) -> Tuple[str, List[Tuple[str, int, int]]]:
+) -> Tuple[str, List[Dict[str, Any]]]:
     """
     Construye un solo string de contexto con encabezados y devuelve también
-    la lista de citas [(book_id, page, chunk_idx)] en el orden de aparición.
+    la lista de citas [{"book_id", "page", "chunk_idx", "author", "year", ...}] en el orden de aparición.
     """
     parts: List[str] = []
-    citations: List[Tuple[str, int, int]] = []
+    citations: List[Dict[str, Any]] = []
     used = 0
 
     for h in hits:
@@ -81,7 +81,16 @@ def _build_context_blocks(
         parts.append(block)
         used += len(block)
         if book_id is not None and page is not None and chunk_idx is not None:
-            citations.append((str(book_id), int(page), int(chunk_idx)))
+            citations.append({
+                "book_id": str(book_id),
+                "page": int(page),
+                "chunk_idx": int(chunk_idx),
+                "author": author,
+                "year": year,
+                "title_en": title_en,
+                "title_yi": title_yi,
+                "ocr_source_url": p.get("ocr_source_url")
+            })
 
     return "\n".join(parts), citations
 
@@ -105,11 +114,14 @@ def _format_user_prompt(query: str, context: str) -> str:
 # ---------------------------
 @dataclass
 class GenerateParams:
-    using: str = "dense_yi_gemini"  # named vector para retrieval
+    using: str = "dense_yi_cohere_1536"  # default to existing Cohere vector
     k: int = 6
     filters: Optional[SearchFilters] = None
     include_yi: bool = True
     max_context_chars: int = 12000
+    score_threshold: Optional[float] = None
+    search_type: str = "semantic"  # semantic | lexical | hybrid
+    alpha: float = 0.5              # peso para hybrid (dense weight)
     # override opcionales:
     target_lang: Optional[str] = None         # "es" | "en" | "yi" | "auto"
     system_prompt: Optional[str] = None
@@ -133,14 +145,44 @@ def answer(
     params = params or GenerateParams()
     retriever = Retriever(vectors_yaml=vectors_yaml)
 
-    # 1) RETRIEVE
-    hits = retriever.search(
-        query=query,
-        k=params.k,
-        using=params.using,
-        filters=params.filters,
-        with_payload=True,
-    )
+    # 1) RETRIEVE (supporting semantic / lexical / hybrid)
+    stype = (params.search_type or "semantic").lower()
+    if stype == "semantic":
+        hits = retriever.search(
+            query=query,
+            k=params.k,
+            using=params.using,
+            filters=params.filters,
+            with_payload=True,
+            score_threshold=params.score_threshold,
+        )
+    elif stype == "lexical":
+        hits = retriever.sparse_search(
+            query=query,
+            k=params.k,
+            filters=params.filters,
+            with_payload=True,
+            score_threshold=params.score_threshold,
+        )
+    elif stype == "hybrid":
+        hits = retriever.hybrid_search(
+            query=query,
+            k=params.k,
+            dense=params.using,
+            filters=params.filters,
+            alpha=params.alpha,
+            with_payload=True,
+            score_threshold=params.score_threshold,
+        )
+    else:
+        hits = retriever.search(
+            query=query,
+            k=params.k,
+            using=params.using,
+            filters=params.filters,
+            with_payload=True,
+            score_threshold=params.score_threshold,
+        )
 
     # 2) CONTEXT
     context, citations = _build_context_blocks(
@@ -164,13 +206,15 @@ def answer(
 
     return {
         "answer": out["text"],
-        "citations": [{"book_id": b, "page": p, "chunk_idx": c} for b, p, c in citations],
+        "citations": citations,
         "hits": hits,
         "usage": out.get("usage"),
         "prompts": {"system": system_prompt, "user": user_prompt},
         "meta": {
             "using": params.using,
             "k": params.k,
+            "search_type": stype,
+            "alpha": params.alpha,
             "target_lang": target_lang,
             "lang_query": lang_query,
         },

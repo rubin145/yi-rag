@@ -155,3 +155,4 @@ def _batched_idx(n: int, batch: int):
 
 if __name__ == "__main__":
     main()
+# poetry run python scripts/index_corpus.py
