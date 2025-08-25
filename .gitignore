@@ -8,8 +8,7 @@ data/raw/*.txt
 
 NOTES.md
 are 
-# Binary model files (downloaded at runtime)
-data/sparse_model/tfidf_vectorizer.joblib
+# Binary model files now handled by Git LFS
 
 # Poetry files (use pip for HF Spaces)
 poetry.lock
