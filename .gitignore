@@ -1,6 +1,6 @@
 .*
 *.env
-# *.yaml  # Allow config files to be committed
+*.yaml
 *.parquet
 data/raw/*.txt
 *.csv

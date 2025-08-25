@@ -13,7 +13,11 @@ _BACKEND_ERR = "Qdrant backend not configured"
 phoenix_exporter = PhoenixExporter()
 langfuse_logger = LangfuseLogger()
 
-retriever = Retriever(vectors_yaml="config/vectors.yaml")
+# Initialize retriever with error handling (configs may not exist in deployment)
+try:
+    retriever = Retriever(vectors_yaml="config/vectors.yaml")
+except Exception:
+    retriever = None
 
 
 def log_query_observability(event):

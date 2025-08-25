@@ -1,7 +1,0 @@
-generator:
-  provider: gemini            # "gemini" | "openai" | "groq"
-  model: gemini-1.5-flash     # ajústalo a tu preferencia/cuenta
-  max_tokens: 600
-  temperature: 0.2
-  top_p: 1.0
-  target_lang: auto           # auto/es/en/yi
